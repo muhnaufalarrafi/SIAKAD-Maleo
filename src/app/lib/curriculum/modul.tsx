@@ -1,6 +1,7 @@
-// src/app/lib/curriculum/modul.tsx
+// src/app/lib/curriculum/modul.ts
 
-const API_BASE_URL = 'http://localhost:3000/api';
+// Mengakses variabel lingkungan dari process.env
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export interface Modul {
   id: string;
@@ -20,84 +21,82 @@ export interface ModulInput {
   e_reference_id?: string;
 }
 
-export async function getAllModul(token: string): Promise<Modul[]> {
+// Interface untuk struktur respons error yang mungkin dikirim oleh API
+// Digunakan untuk type-safety di handleApiResponse dan checkinGuru
+interface BackendErrorResponse {
+  error?: string;
+  jarak_meter?: number; // Backend mengirim ini untuk error tertentu
+  // Tambahkan properti lain yang mungkin dikirim server saat error
+}
+
+// Utility untuk handle JSON + error
+// Mengatasi: "Unexpected any. Specify a different type." pada `(err as any).error`
+// Mengatasi: "'parseError' is defined but never used." pada `catch (parseError)`
+async function handleApiResponse<T>(res: Response): Promise<T> {
+  let data: unknown; // Lebih aman daripada 'any' di awal
+  try {
+    const text = await res.text();
+    data = text ? JSON.parse(text) : {};
+  } catch { // Tanpa parameter untuk `catch` jika tidak digunakan
+    data = {}; // Jika parsing gagal, set ke objek kosong
+  }
+
+  if (!res.ok) {
+    // Asumsikan 'data' adalah BackendErrorResponse untuk mengakses properti 'error'
+    const errorData = data as BackendErrorResponse;
+    throw new Error(errorData.error || 'API request failed');
+  }
+  return data as T; // Type assertion untuk mengembalikan tipe yang diharapkan
+}
+
+// 1) Ambil semua modul
+export async function getAllModul(): Promise<Modul[]> {
   const res = await fetch(`${API_BASE_URL}/modul`, {
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    method: 'GET',
+    credentials: 'include',                // kirim cookie JWT otomatis
+    headers: { 'Content-Type': 'application/json' },
   });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || 'Failed to fetch modul');
-  }
-  return await res.json();
+  return handleApiResponse<Modul[]>(res);
 }
 
-export async function getModulById(token: string, id: string): Promise<Modul> {
+// 2) Ambil modul berdasarkan ID
+export async function getModulById(id: string): Promise<Modul> {
   const res = await fetch(`${API_BASE_URL}/modul/${id}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    method: 'GET',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
   });
-  if (!res.ok) {
-    const err = await res.json();
-    if (res.status === 404) throw new Error('Modul not found');
-    throw new Error(err.error || 'Failed to fetch modul');
-  }
-  return await res.json();
+  return handleApiResponse<Modul>(res);
 }
 
-export async function createModul(token: string, payload: ModulInput): Promise<Modul> {
+// 3) Buat modul baru
+export async function createModul(payload: ModulInput): Promise<Modul> {
   const res = await fetch(`${API_BASE_URL}/modul`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || 'Failed to create modul');
-  }
-  return await res.json();
+  return handleApiResponse<Modul>(res);
 }
 
-export async function updateModul(
-  token: string,
-  id: string,
-  payload: ModulInput
-): Promise<Modul> {
+// 4) Update modul
+export async function updateModul(id: string, payload: ModulInput): Promise<Modul> {
   const res = await fetch(`${API_BASE_URL}/modul/${id}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) {
-    const err = await res.json();
-    if (res.status === 404) throw new Error('Modul not found');
-    throw new Error(err.error || 'Failed to update modul');
-  }
-  return await res.json();
+  return handleApiResponse<Modul>(res);
 }
 
-export async function deleteModul(token: string, id: string): Promise<{ message: string }> {
+// 5) Hapus modul
+export async function deleteModul(id: string): Promise<{ message: string }> {
   const res = await fetch(`${API_BASE_URL}/modul/${id}`, {
     method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
   });
-  if (!res.ok) {
-    const err = await res.json();
-    if (res.status === 404) throw new Error('Modul not found');
-    throw new Error(err.error || 'Failed to delete modul');
-  }
-  return await res.json();
+  return handleApiResponse<{ message: string }>(res);
 }

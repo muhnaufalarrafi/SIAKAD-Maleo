@@ -1,117 +1,106 @@
-// src/app/lib/curriculum/mataPelajaran.tsx
+// src/app/lib/curriculum/mataPelajaran.ts
 
-const API_BASE_URL = 'http://localhost:3000/api';
+// Mengakses variabel lingkungan dari process.env
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+interface ApiErrorResponse {
+  error?: string;
+  // Anda bisa menambahkan properti lain di sini jika API Anda mengembalikannya (misal: 'message', 'code')
+}
+
+// Helper untuk menangani response API secara umum
+async function handleApiResponse<T>(res: Response): Promise<T> {
+  let data: unknown; // Gunakan 'unknown' untuk data yang belum pasti tipenya
+  try {
+    const text = await res.text();
+    data = text ? JSON.parse(text) : {};
+  } catch { // Tanpa parameter `catch` jika objek error tidak digunakan
+    data = {}; // Jika parsing gagal, set ke objek kosong
+  }
+
+  if (!res.ok) {
+    // --- PERUBAHAN DI SINI ---
+    const errorData = data as ApiErrorResponse; // Type assertion ke interface yang spesifik
+    throw new Error(errorData.error || 'API request failed');
+    // --- AKHIR PERUBAHAN ---
+  }
+  return data as T; // Type assertion untuk mengembalikan tipe yang diharapkan
+}
 
 export interface Mapel {
   id: string;
+  program_id: number;    // ID program induk
+  code: string;          // kode mata pelajaran
   nama: string;
+  tingkat_min: number;   // tingkatan minimal
+  tingkat_max: number;   // tingkatan maksimal
 }
 
 export interface MapelInput {
+  program_id: number;
+  code: string;
   nama: string;
+  tingkat_min: number;
+  tingkat_max: number;
 }
 
-export async function getAllMapel(token: string): Promise<Mapel[]> {
-  const response = await fetch(`${API_BASE_URL}/mapel`, {
+// 1) Ambil semua mata pelajaran
+export async function getAllMapel(): Promise<Mapel[]> {
+  const res = await fetch(`${API_BASE_URL}/mapel`, {
     method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    credentials: 'include',                      // kirim cookie JWT otomatis
+    headers: { 'Content-Type': 'application/json' },
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch mata pelajaran');
-  }
-
-  const data: Mapel[] = await response.json();
-  return data;
+  return handleApiResponse<Mapel[]>(res);
 }
 
-export async function getMapelById(token: string, id: string): Promise<Mapel> {
-  const response = await fetch(`${API_BASE_URL}/mapel/${id}`, {
+// 2) Ambil satu mata pelajaran berdasarkan ID
+export async function getMapelById(id: string): Promise<Mapel> {
+  const res = await fetch(`${API_BASE_URL}/mapel/${id}`, {
     method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    if (response.status === 404) {
-      throw new Error('Mapel not found');
-    }
-    throw new Error(error.error || 'Failed to fetch mata pelajaran');
+  if (res.status === 404) {
+    throw new Error('Mapel not found');
   }
-
-  const data: Mapel = await response.json();
-  return data;
+  return handleApiResponse<Mapel>(res);
 }
 
-export async function createMapel(token: string, payload: MapelInput): Promise<Mapel> {
-  const response = await fetch(`${API_BASE_URL}/mapel`, {
+// 3) Buat mata pelajaran baru
+export async function createMapel(payload: MapelInput): Promise<Mapel> {
+  const res = await fetch(`${API_BASE_URL}/mapel`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to create mata pelajaran');
-  }
-
-  const data: Mapel = await response.json();
-  return data;
+  return handleApiResponse<Mapel>(res);
 }
 
-export async function updateMapel(
-  token: string,
-  id: string,
-  payload: MapelInput
-): Promise<Mapel> {
-  const response = await fetch(`${API_BASE_URL}/mapel/${id}`, {
+// 4) Update mata pelajaran
+export async function updateMapel(id: string, payload: MapelInput): Promise<Mapel> {
+  const res = await fetch(`${API_BASE_URL}/mapel/${id}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    if (response.status === 404) {
-      throw new Error('Mapel not found');
-    }
-    throw new Error(error.error || 'Failed to update mata pelajaran');
+  if (res.status === 404) {
+    throw new Error('Mapel not found');
   }
-
-  const data: Mapel = await response.json();
-  return data;
+  return handleApiResponse<Mapel>(res);
 }
 
-export async function deleteMapel(token: string, id: string): Promise<{ message: string }> {
-  const response = await fetch(`${API_BASE_URL}/mapel/${id}`, {
+// 5) Hapus mata pelajaran
+export async function deleteMapel(id: string): Promise<{ message: string }> {
+  const res = await fetch(`${API_BASE_URL}/mapel/${id}`, {
     method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    if (response.status === 404) {
-      throw new Error('Mapel not found');
-    }
-    throw new Error(error.error || 'Failed to delete mata pelajaran');
+  if (res.status === 404) {
+    throw new Error('Mapel not found');
   }
-
-  const data: { message: string } = await response.json();
-  return data;
+  return handleApiResponse<{ message: string }>(res);
 }

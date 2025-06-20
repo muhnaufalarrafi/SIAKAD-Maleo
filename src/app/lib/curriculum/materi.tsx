@@ -1,6 +1,7 @@
-// src/app/lib/curriculum/materi.tsx
+// src/app/lib/curriculum/materi.ts
 
-const API_BASE_URL = 'http://localhost:3000/api';
+// Mengakses variabel lingkungan dari process.env
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export interface Materi {
   id: string;
@@ -15,84 +16,82 @@ export interface MateriInput {
   deskripsi?: string;
 }
 
-export async function getAllMateri(token: string): Promise<Materi[]> {
+// Interface untuk struktur respons error yang mungkin dikirim oleh API
+// Digunakan untuk type-safety di handleApiResponse dan checkinGuru
+interface BackendErrorResponse {
+  error?: string;
+  jarak_meter?: number; // Backend mengirim ini untuk error tertentu
+  // Tambahkan properti lain yang mungkin dikirim server saat error
+}
+
+// Utility untuk handle JSON + error
+// Mengatasi: "Unexpected any. Specify a different type." pada `(err as any).error`
+// Mengatasi: "'parseError' is defined but never used." pada `catch (parseError)`
+async function handleApiResponse<T>(res: Response): Promise<T> {
+  let data: unknown; // Lebih aman daripada 'any' di awal
+  try {
+    const text = await res.text();
+    data = text ? JSON.parse(text) : {};
+  } catch { // Tanpa parameter untuk `catch` jika tidak digunakan
+    data = {}; // Jika parsing gagal, set ke objek kosong
+  }
+
+  if (!res.ok) {
+    // Asumsikan 'data' adalah BackendErrorResponse untuk mengakses properti 'error'
+    const errorData = data as BackendErrorResponse;
+    throw new Error(errorData.error || 'API request failed');
+  }
+  return data as T; // Type assertion untuk mengembalikan tipe yang diharapkan
+}
+
+// 1) Ambil semua materi
+export async function getAllMateri(): Promise<Materi[]> {
   const res = await fetch(`${API_BASE_URL}/materi`, {
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    method: 'GET',
+    credentials: 'include',              // kirim cookie JWT otomatis
+    headers: { 'Content-Type': 'application/json' },
   });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || 'Failed to fetch materi');
-  }
-  return await res.json();
+  return handleApiResponse<Materi[]>(res);
 }
 
-export async function getMateriById(token: string, id: string): Promise<Materi> {
+// 2) Ambil satu materi berdasarkan ID
+export async function getMateriById(id: string): Promise<Materi> {
   const res = await fetch(`${API_BASE_URL}/materi/${id}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    method: 'GET',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
   });
-  if (!res.ok) {
-    const err = await res.json();
-    if (res.status === 404) throw new Error('Materi not found');
-    throw new Error(err.error || 'Failed to fetch materi');
-  }
-  return await res.json();
+  return handleApiResponse<Materi>(res);
 }
 
-export async function createMateri(token: string, payload: MateriInput): Promise<Materi> {
+// 3) Buat materi baru
+export async function createMateri(payload: MateriInput): Promise<Materi> {
   const res = await fetch(`${API_BASE_URL}/materi`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || 'Failed to create materi');
-  }
-  return await res.json();
+  return handleApiResponse<Materi>(res);
 }
 
-export async function updateMateri(
-  token: string,
-  id: string,
-  payload: MateriInput
-): Promise<Materi> {
+// 4) Perbarui materi
+export async function updateMateri(id: string, payload: MateriInput): Promise<Materi> {
   const res = await fetch(`${API_BASE_URL}/materi/${id}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) {
-    const err = await res.json();
-    if (res.status === 404) throw new Error('Materi not found');
-    throw new Error(err.error || 'Failed to update materi');
-  }
-  return await res.json();
+  return handleApiResponse<Materi>(res);
 }
 
-export async function deleteMateri(token: string, id: string): Promise<{ message: string }> {
+// 5) Hapus materi
+export async function deleteMateri(id: string): Promise<{ message: string }> {
   const res = await fetch(`${API_BASE_URL}/materi/${id}`, {
     method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
   });
-  if (!res.ok) {
-    const err = await res.json();
-    if (res.status === 404) throw new Error('Materi not found');
-    throw new Error(err.error || 'Failed to delete materi');
-  }
-  return await res.json();
+  return handleApiResponse<{ message: string }>(res);
 }

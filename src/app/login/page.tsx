@@ -1,48 +1,48 @@
+// src\app\login\page.tsx
 'use client';
 
-import { useRouter } from 'next/navigation'
-import Image from 'next/image'
-import { FormEvent, useState } from 'react'
-import { login } from '../lib/auth/api' // import fungsi login
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { FormEvent, useState } from 'react';
+import { login, getMe } from '../lib/auth/api';
 
 export default function LoginPage() {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const router = useRouter();
+  // Ganti `email` menjadi `identifier` karena bisa berupa email atau username
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
     try {
-      const { token } = await login({ identifier: email, password })
-      // Simpan token di localStorage (atau cookie sesuai kebutuhan)
-      localStorage.setItem('token', token)
+      await login({ identifier: identifier, password });
 
-      // Ambil data user untuk mendapatkan role
-      const userResponse = await fetch('http://localhost:3000/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      const userData = await userResponse.json()
+      const userData = await getMe();
 
-      // Cek role user dan arahkan ke dashboard yang sesuai
-      const userRole = userData.user.roles[0]?.name; // Asumsi hanya ada satu role, sesuaikan jika ada lebih dari satu
-
-      if (userRole === 'admin' || 'superadmin') {
-        router.push('/admin/dashboard');  // Redirect ke dashboard admin
-      } else if (userRole === 'tutor') {
-        router.push('/tutor/dashboard');  // Redirect ke dashboard tutor
+      const userRole = userData.roles[0]?.name;
+        if (userRole === 'tutor') {
+            router.push('/page/tutor');
+        } else {
+            router.push('/page/dashboard');
+        }
+    } catch (err: unknown) { // <-- UBAH DARI `any` MENJADI `unknown`
+      // Lakukan type narrowing untuk mengakses properti `message`
+      if (err instanceof Error) {
+        setError(err.message || 'Login gagal, coba lagi');
       } else {
-        setError('Role tidak dikenal');
+        // Jika error bukan instance dari Error, mungkin string atau objek lain
+        setError('Login gagal, coba lagi');
+        console.error("An unexpected error occurred:", err); // Log error yang tidak dikenal
       }
-    } catch (err: any) {
-      setError(err.message || 'Login gagal, coba lagi')
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F5F8FF]">
@@ -68,14 +68,15 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-6">
             <label className="block">
-              <span className="text-sm font-medium text-gray-600">Email</span>
+              {/* Ubah label dan placeholder untuk lebih umum */}
+              <span className="text-sm font-medium text-gray-600">Email atau Username</span>
               <input
-                type="email"
+                type="text" // Ubah type dari "email" menjadi "text"
                 required
-                placeholder="you@example.com"
+                placeholder="email@example.com atau username" // Sesuaikan placeholder
                 className="mt-1 w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#F6C443] text-black"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={identifier} // Gunakan state `identifier`
+                onChange={(e) => setIdentifier(e.target.value)} // Update state `identifier`
                 disabled={loading}
               />
             </label>
@@ -108,5 +109,5 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
