@@ -1,3 +1,4 @@
+// src/app/pages/MapelPage.tsx (atau path yang sesuai)
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -81,16 +82,26 @@ const MapelPage = () => {
           <table className="min-w-full text-sm">
             <thead className="bg-[#18355E] text-white">
               <tr>
-                <th className="py-3 px-4 text-left">Mapel ID</th>
-                <th className="py-3 px-4 text-left">Nama</th>
+                {/* <-- UBAH & TAMBAHKAN HEADER TABEL --> */}
+                <th className="py-3 px-4 text-left">Kode</th>
+                <th className="py-3 px-4 text-left">Nama Mata Pelajaran</th>
+                <th className="py-3 px-4 text-left">Jenjang</th>
+                <th className="py-3 px-4 text-left">Program</th>
+                <th className="py-3 px-4 text-left">Tingkat / Kelas</th>
                 <th className="py-3 px-4 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {mapelList.map((m) => (
                 <tr key={m.id} className="hover:bg-[#F5F8FF]/60">
-                  <td className="py-3 px-4 font-medium text-[#0F2850]">{m.id}</td>
+                  {/* <-- UBAH & TAMBAHKAN ISI TABEL --> */}
+                  <td className="py-3 px-4 font-medium text-gray-600">{m.code}</td>
                   <td className="py-3 px-4 font-medium text-[#0F2850]">{m.nama}</td>
+                  <td className="py-3 px-4 text-[#0F2850]">{m.jenjang}</td>
+                  <td className="py-3 px-4 text-[#0F2850]">{m.program_nama}</td>
+                  <td className="py-3 px-4 text-[#0F2850]">
+                    Kelas {m.tingkat_min} - {m.tingkat_max}
+                  </td>
                   <td className="py-3 px-4 text-center space-x-2 whitespace-nowrap">
                     <button
                       onClick={() => { setEditMapel(m); setOpen(true); }}

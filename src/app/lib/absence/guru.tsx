@@ -20,6 +20,7 @@ export interface AbsensiGuru {
   jarak_meter?: number;
   status: 'hadir' | 'izin' | 'sakit' | 'alfa';
   catatan?: string;
+  nama_tutor: string;
 }
 
 export interface AbsensiGuruInput {

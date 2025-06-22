@@ -18,7 +18,7 @@ export interface AbsensiSiswa {
   isi_tugas?: string;
   tanggal_pengumpulan?: string;    // YYYY-MM-DD
   ketercapaian?: string;
-  // joins
+  hari?: string; // <-- TAMBAHKAN BARIS INI
   nama_siswa?: string;
   jam_mulai?: string;
   jam_selesai?: string;

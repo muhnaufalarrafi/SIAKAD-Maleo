@@ -34,6 +34,9 @@ export interface Mapel {
   nama: string;
   tingkat_min: number;   // tingkatan minimal
   tingkat_max: number;   // tingkatan maksimal
+  program_nama: string;
+  jenjang: string;
+
 }
 
 export interface MapelInput {
