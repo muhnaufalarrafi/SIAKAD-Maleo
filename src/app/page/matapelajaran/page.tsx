@@ -12,6 +12,7 @@ import {
   MapelInput,
 } from '@/app/lib/curriculum/mataPelajaran';
 import { MataPelajaranModal } from '@/app/components/modal/MataPelajaranModal';
+import { Button } from '@/app/components/button/Button'; // Menggunakan Button yang konsisten
 
 const MapelPage = () => {
   const { user } = useAuth();
@@ -20,6 +21,9 @@ const MapelPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [isOpen, setOpen] = useState(false);
   const [editMapel, setEditMapel] = useState<MapelType | null>(null);
+
+  // BARU: State untuk menyimpan query pencarian
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchMapel = async () => {
     setLoading(true);
@@ -35,9 +39,17 @@ const MapelPage = () => {
   };
 
   useEffect(() => {
-    if (!user) return;
-    fetchMapel();
+    if (user) {
+      fetchMapel();
+    }
   }, [user]);
+
+  // DIUBAH: Logika untuk memfilter mata pelajaran berdasarkan searchQuery
+  const filteredMapel = mapelList.filter(mapel =>
+    mapel.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    mapel.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (mapel.program_nama && mapel.program_nama.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   if (!user) {
     return (
@@ -48,25 +60,21 @@ const MapelPage = () => {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-[#18355E]">Kelola Mata Pelajaran</h1>
-        <button
-          id="btnAddMapel"
-          onClick={() => { setEditMapel(null); setOpen(true); }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#F6C443] hover:bg-[#E8B73B] text-[#18355E] font-semibold shadow active:scale-95 transition"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
+    <div className="space-y-6">
+      {/* DIUBAH: Baris kontrol untuk pencarian dan tombol tambah */}
+      <div className="flex justify-between items-center gap-4">
+        <div className="relative w-full max-w-xs">
+          <input
+            type="text"
+            placeholder="Cari berdasarkan nama atau kode..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-4 pr-4 py-2 border border-gray-200 rounded-full text-[#18355E] focus:outline-none focus:ring-2 focus:ring-[#18355E]/50"
+          />
+        </div>
+        <Button onClick={() => { setEditMapel(null); setOpen(true); }}>
           Tambah Mata Pelajaran
-        </button>
+        </Button>
       </div>
 
       {loading && (
@@ -82,7 +90,6 @@ const MapelPage = () => {
           <table className="min-w-full text-sm">
             <thead className="bg-[#18355E] text-white">
               <tr>
-                {/* <-- UBAH & TAMBAHKAN HEADER TABEL --> */}
                 <th className="py-3 px-4 text-left">Kode</th>
                 <th className="py-3 px-4 text-left">Nama Mata Pelajaran</th>
                 <th className="py-3 px-4 text-left">Jenjang</th>
@@ -92,9 +99,9 @@ const MapelPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {mapelList.map((m) => (
+              {/* DIUBAH: Gunakan 'filteredMapel' untuk me-render tabel */}
+              {filteredMapel.map((m) => (
                 <tr key={m.id} className="hover:bg-[#F5F8FF]/60">
-                  {/* <-- UBAH & TAMBAHKAN ISI TABEL --> */}
                   <td className="py-3 px-4 font-medium text-gray-600">{m.code}</td>
                   <td className="py-3 px-4 font-medium text-[#0F2850]">{m.nama}</td>
                   <td className="py-3 px-4 text-[#0F2850]">{m.jenjang}</td>
@@ -103,23 +110,23 @@ const MapelPage = () => {
                     Kelas {m.tingkat_min} - {m.tingkat_max}
                   </td>
                   <td className="py-3 px-4 text-center space-x-2 whitespace-nowrap">
-                    <button
+                    <Button
+                      className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs"
                       onClick={() => { setEditMapel(m); setOpen(true); }}
-                      className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded text-xs"
                     >
                       Edit
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      className="bg-red-600 hover:bg-red-700 text-white text-xs"
                       onClick={async () => {
                         if (confirm(`Hapus mata pelajaran "${m.nama}"?`)) {
                           await deleteMapel(m.id);
                           await fetchMapel();
                         }
                       }}
-                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
                     >
                       Hapus
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}

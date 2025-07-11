@@ -23,6 +23,9 @@ export default function ModulPage() {
   const [isModalOpen, setModalOpen]     = useState(false);
   const [selectedModul, setSelectedModul] = useState<Modul|null>(null);
 
+  // BARU: State untuk menyimpan query pencarian
+  const [searchQuery, setSearchQuery] = useState('');
+
   // fetch all modul
   async function loadData() {
     setLoading(true);
@@ -39,22 +42,40 @@ export default function ModulPage() {
 
   // on mount, after auth
   useEffect(() => {
-    if (!user) return;
-    loadData();
+    if (user) {
+      loadData();
+    }
   }, [user]);
 
-  if (!user)    return <div className="text-center py-10">Memuat pengguna…</div>;
-  if (loading)  return <div className="text-center py-10">Loading…</div>;
-  if (error)    return <div className="text-center py-10 text-red-600">{error}</div>;
+  // BARU: Logika untuk memfilter modul berdasarkan searchQuery
+  const filteredModul = modulList.filter(modul =>
+    modul.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (modul.mapel_nama && modul.mapel_nama.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (modul.deskripsi && modul.deskripsi.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  if (!user)   return <div className="text-center py-10">Memuat pengguna…</div>;
+  if (loading) return <div className="text-center py-10">Loading…</div>;
+  if (error)   return <div className="text-center py-10 text-red-600">{error}</div>;
 
   return (
     <div className="min-h-screen bg-[#F5F8FF] p-6">
       <div className="mt-6 bg-white rounded-2xl shadow p-6">
+        
+        {/* DIUBAH: Baris kontrol sekarang berisi input pencarian */}
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-[#18355E]">Modul</h3>
+          <div className="relative w-full max-w-xs">
+            <input
+              type="text"
+              placeholder="Cari modul, mapel, deskripsi..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-4 pr-4 py-2 border border-gray-200 rounded-full text-[#18355E] focus:outline-none focus:ring-2 focus:ring-[#18355E]/50"
+            />
+          </div>
           <button
             onClick={() => { setSelectedModul(null); setModalOpen(true); }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#F6C443] hover:bg-[#E8B73B] text-[#18355E] font-semibold"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#F6C443] hover:bg-[#E8B73B] text-[#18355E] font-semibold whitespace-nowrap"
           >
             Tambah Modul
           </button>
@@ -73,7 +94,8 @@ export default function ModulPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {modulList.map(m => (
+              {/* DIUBAH: Gunakan 'filteredModul' untuk menampilkan data */}
+              {filteredModul.map(m => (
                 <tr key={m.id} className="hover:bg-[#F5F8FF]/60">
                   <td className="py-3 px-4 font-medium text-[#0F2850]">{m.id}</td>
                   <td className="py-3 px-4 text-[#0F2850]">{m.mapel_nama}</td>

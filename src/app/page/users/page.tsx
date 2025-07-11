@@ -1,4 +1,3 @@
-// frontend/src/app/admin/users/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -14,14 +13,14 @@ import { UserModal } from '@/app/components/modal/UserModal';
 import { assignUserRole, removeUserRole } from '@/app/lib/rbac/userroles';
 import { assignUserPermission, removeUserPermission } from '@/app/lib/rbac/userpermissions';
 
-    // di puncak file, tambahkan:
-    interface UserFormValues {
-      username: string;
-      email: string;
-      password?: string;
-      roles: number[];
-      permissions: number[];
-    }
+// di puncak file, tambahkan:
+interface UserFormValues {
+  username: string;
+  email: string;
+  password?: string;
+  roles: number[];
+  permissions: number[];
+}
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserWithRoles[]>([]);
@@ -31,6 +30,9 @@ export default function AdminUsersPage() {
   const [isAddOpen, setAddOpen] = useState(false);
   const [isEditOpen, setEditOpen] = useState(false);
   const [selected, setSelected] = useState<UserWithRoles | null>(null);
+
+  // BARU: State untuk menyimpan query pencarian
+  const [searchQuery, setSearchQuery] = useState('');
 
   const refresh = async () => {
     setLoading(true);
@@ -49,9 +51,17 @@ export default function AdminUsersPage() {
     refresh();
   }, []);
 
+  // DIUBAH: Logika untuk memfilter pengguna berdasarkan searchQuery
+  const filteredUsers = users.filter(user =>
+    user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div className="text-red-600">{error}</div>;
 
+  // ... (Fungsi handleAdd, handleEdit, handleDelete tetap sama)
+  
   // 🔴 Tambah user
   const handleAdd = async (data: UserFormValues) => {
     if (!data.password) {
@@ -94,7 +104,7 @@ const handleEdit = async (data: Omit<UserFormValues, 'password'>) => {
   if (!selected) {
     console.error("User belum dipilih untuk diedit.");
     return;
-  }    const userId = selected.id;
+  }   const userId = selected.id;
 
     await updateUser(userId, {
       username: data.username,
@@ -140,9 +150,20 @@ const handleEdit = async (data: Omit<UserFormValues, 'password'>) => {
     }
   };
 
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      {/* BARU: Baris untuk kontrol (pencarian dan tombol tambah) */}
+      <div className="flex justify-between items-center gap-4">
+        <div className="relative w-full max-w-xs">
+          <input
+            type="text"
+            placeholder="Cari berdasarkan nama atau email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-4 pr-10 py-2 border border-gray-200 rounded-full text-[#18355E] focus:outline-none focus:ring-2 focus:ring-[#18355E]/50"
+          />
+        </div>
         <Button onClick={() => setAddOpen(true)}>Tambah</Button>
       </div>
 
@@ -159,7 +180,8 @@ const handleEdit = async (data: Omit<UserFormValues, 'password'>) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {users.map((u, i) => (
+            {/* DIUBAH: Gunakan 'filteredUsers' untuk me-render tabel */}
+            {filteredUsers.map((u, i) => (
               <tr key={u.id} className="hover:bg-[#F5F8FF]/60">
                 <td className="py-3 px-4 text-gray-600">{i + 1}</td>
                 <td className="py-3 px-4 font-medium text-[#0F2850]">{u.username}</td>
@@ -214,7 +236,7 @@ const handleEdit = async (data: Omit<UserFormValues, 'password'>) => {
           setSelected(null);
         }}
         onSubmit={isAddOpen ? handleAdd : handleEdit}
-  initialData={
+    initialData={
     isEditOpen && selected
       ? {
           user_id: selected.id,
@@ -232,7 +254,7 @@ const handleEdit = async (data: Omit<UserFormValues, 'password'>) => {
           })),
         }
       : undefined
-      }
+    }
       />
     </div>
   );

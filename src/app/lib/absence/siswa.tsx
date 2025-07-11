@@ -8,17 +8,17 @@ export interface AbsensiSiswa {
   id: string;
   jadwal_id: string;
   siswa_id: string;
-  tanggal: string;                 // YYYY-MM-DD
+  tanggal: string;                  // YYYY-MM-DD
   status: AbsensiStatus;
   catatan?: string;
   tutor_id?: string;
   kelas_id?: string;
-  sub_materi_id?: string;
+  sub_materi?: string;
   jenis_tugas?: JenisTugas;
   isi_tugas?: string;
-  tanggal_pengumpulan?: string;    // YYYY-MM-DD
+  tanggal_pengumpulan?: string;     // YYYY-MM-DD
   ketercapaian?: string;
-  hari?: string; // <-- TAMBAHKAN BARIS INI
+  hari?: string;
   nama_siswa?: string;
   jam_mulai?: string;
   jam_selesai?: string;
@@ -32,12 +32,20 @@ export interface AbsensiSiswaInput {
   catatan?: string;
   tutor_id?: string;
   kelas_id?: string;
-  sub_materi_id?: string;
+  sub_materi?: string;
   jenis_tugas?: JenisTugas;
   isi_tugas?: string;
   tanggal_pengumpulan?: string;
   ketercapaian?: string;
 }
+
+// --- INTERFACE BARU ---
+export interface TeachingHistory {
+  mata_pelajaran: string;
+  sub_materi: string;
+  tanggal: string; // YYYY-MM-DD
+}
+// --------------------
 
 // Tambahkan interface untuk respons error API jika server Anda mengirimkannya
 interface ApiErrorResponse {
@@ -50,8 +58,8 @@ async function handleApiResponse<T>(res: Response): Promise<T> {
 
   try {
     data = text ? JSON.parse(text) : {};
-  } catch (parseError) { // <--- Biarkan 'parseError' di sini
-    console.error("Failed to parse API response as JSON:", parseError); // <--- Gunakan variabelnya
+  } catch (parseError) {
+    console.error("Failed to parse API response as JSON:", parseError);
     data = {};
   }
 
@@ -160,3 +168,19 @@ export async function deleteAbsensiSiswa(id: string): Promise<{ message: string 
   });
   return handleApiResponse<{ message: string }>(res);
 }
+
+// --- FUNGSI BARU ---
+/**
+ * Ambil riwayat materi yang diajarkan oleh seorang tutor
+ */
+export async function getTeachingHistoryByTutor(
+  tutorId: string
+): Promise<TeachingHistory[]> {
+  const res = await fetch(`${API_BASE_URL}/absensi-siswa/history/tutor/${tutorId}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  return handleApiResponse<TeachingHistory[]>(res);
+}
+// --------------------

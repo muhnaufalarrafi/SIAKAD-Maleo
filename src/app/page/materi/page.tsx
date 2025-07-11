@@ -22,6 +22,9 @@ export default function MateriPage() {
   const [isModalOpen, setModalOpen] = useState(false);
   const [selectedMateri, setSelectedMateri] = useState<MateriType | null>(null);
 
+  // BARU: State untuk menyimpan query pencarian
+  const [searchQuery, setSearchQuery] = useState('');
+
   const fetchMateri = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -38,11 +41,19 @@ export default function MateriPage() {
     if (user) fetchMateri();
   }, [user, fetchMateri]);
 
+  // BARU: Logika untuk memfilter materi berdasarkan searchQuery
+  const filteredMateri = materiList.filter(materi =>
+    materi.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (materi.deskripsi && materi.deskripsi.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
   const columns: TableDesainColumn<MateriType>[] = useMemo(() => [
-    { header: 'ID', accessor: m => m.id },
-    { header: 'Mapel ID', accessor: m => m.mata_pelajaran_id },
-    { header: 'Nama', accessor: m => m.nama },
-    { header: 'Deskripsi', accessor: m => m.deskripsi || '-' },
+    // Kolom ID dan Mapel ID bisa disembunyikan jika tidak relevan untuk user
+    // { header: 'ID', accessor: m => m.id }, 
+    // { header: 'Mapel ID', accessor: m => m.mata_pelajaran_id },
+    { header: '#', accessor: (m, index) => index + 1, className: 'w-12 text-center' },
+    { header: 'Nama Materi', accessor: m => m.nama, className: 'font-medium' },
+    { header: 'Deskripsi', accessor: m => m.deskripsi || '-', className: 'text-gray-600' },
     {
       header: 'Aksi',
       accessor: m => (
@@ -73,6 +84,7 @@ export default function MateriPage() {
           </button>
         </div>
       ),
+      className: 'text-center'
     },
   ], [fetchMateri]);
 
@@ -87,14 +99,24 @@ export default function MateriPage() {
   return (
     <div className="min-h-screen bg-[#F5F8FF] p-6">
       <div className="mt-6 bg-white rounded-2xl shadow p-6">
+        
+        {/* DIUBAH: Baris kontrol sekarang berisi input pencarian */}
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-[#18355E]">Materi</h3>
+          <div className="relative w-full max-w-xs">
+            <input
+              type="text"
+              placeholder="Cari berdasarkan nama materi..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-4 pr-4 py-2 border border-gray-200 rounded-full text-[#18355E] focus:outline-none focus:ring-2 focus:ring-[#18355E]/50"
+            />
+          </div>
           <button
             onClick={() => {
               setSelectedMateri(null);
               setModalOpen(true);
             }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#F6C443] hover:bg-[#E8B73B] text-[#18355E] font-semibold shadow active:scale-95 transition"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#F6C443] hover:bg-[#E8B73B] text-[#18355E] font-semibold shadow active:scale-95 transition whitespace-nowrap"
           >
             Tambah Materi
           </button>
@@ -105,7 +127,8 @@ export default function MateriPage() {
         ) : error ? (
           <div className="text-center py-10 text-red-600">{error}</div>
         ) : (
-          <TableDesain columns={columns} data={materiList} />
+          // DIUBAH: Gunakan 'filteredMateri' untuk menampilkan data
+          <TableDesain columns={columns} data={filteredMateri} />
         )}
       </div>
 

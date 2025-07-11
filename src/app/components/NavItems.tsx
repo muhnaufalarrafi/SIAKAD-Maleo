@@ -150,8 +150,14 @@ export const navItems: NavItem[] = [
   },
   {
     href: '/page/e-reference',
-    label: 'E-Reference',
+    label: 'Bahan Ajar',
     icon: <HiBookOpen className="h-6 w-6 text-gray-300" />,
     requiredPermissions: ['e-reference.create', 'e-reference.update', 'e-reference.delete'],
+  },
+  {
+    href: '/page/jurnal-tutor',
+    label: 'History Pengajaran',
+    icon: <HiBookOpen className="h-6 w-6 text-gray-300" />,
+    requiredRoles: ['tutor'],
   },
 ];

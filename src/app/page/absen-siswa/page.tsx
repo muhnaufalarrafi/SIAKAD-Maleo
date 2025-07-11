@@ -18,7 +18,7 @@ import FormSelect from '@/app/components/FormSelect';
 import MapelSelect      from '@/app/components/MapelSelect';
 import ModulSelect      from '@/app/components/ModulSelect';
 import MateriSelect     from '@/app/components/MateriSelect';
-import SubMateriSelect  from '@/app/components/SubMateriSelect';
+// import SubMateriSelect  from '@/app/components/SubMateriSelect'; // DIHAPUS
 import TipeTugasSelect  from '@/app/components/TipeTugasSelect';
 
 export default function AbsenSiswaPage() {
@@ -29,10 +29,10 @@ export default function AbsenSiswaPage() {
   const [selectedJadwal, setSelectedJadwal] = useState<JadwalKelas | null>(null);
 
   // kurikulum inputs
-  const [mapel, setMapel]         = useState('');
-  const [modul, setModul]         = useState('');
-  const [materi, setMateri]       = useState('');
-  const [subMateri, setSubMateri] = useState('');
+  const [mapel, setMapel]       = useState('');
+  const [modul, setModul]       = useState('');
+  const [materi, setMateri]     = useState('');
+  const [subMateri, setSubMateri] = useState(''); // State ini tetap digunakan
   const [tipeTugas, setTipeTugas] = useState('');
   const [isiTugas, setIsiTugas]   = useState('');
 
@@ -46,7 +46,7 @@ export default function AbsenSiswaPage() {
   const [saving, setSaving]   = useState(false);
   const [error, setError]     = useState<string | null>(null);
 
-const getToday = () => new Date().toISOString().split('T')[0];
+  const getToday = () => new Date().toISOString().split('T')[0];
 
   // load jadwal hari ini
   useEffect(() => {
@@ -55,10 +55,7 @@ const getToday = () => new Date().toISOString().split('T')[0];
     getJadwalByTutorId(user!.id)
       .then(g => {
         const all = Object.values(g).flat();
-        // note ini untuk jika ingin yang di tampiplkan automatis filter  perhari
-        //const names = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
-        //setJadwalList(all.filter(j => j.hari === names[new Date().getDay()]));
-        setJadwalList(all); // <-- Langsung set semua jadwal yang diterima
+        setJadwalList(all);
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
@@ -93,6 +90,20 @@ const getToday = () => new Date().toISOString().split('T')[0];
           map[r.siswa_id] = { status: r.status, catatan: r.catatan || '' };
         });
         setAttendance(map);
+        
+        // --- BLOK BARU: Isi form dengan data yang sudah ada ---
+        if (existing.length > 0) {
+          const firstRecord = existing[0];
+          setSubMateri(firstRecord.sub_materi || '');
+          setTipeTugas(firstRecord.jenis_tugas || '');
+          setIsiTugas(firstRecord.isi_tugas || '');
+        } else {
+          // Reset jika tidak ada data
+          setSubMateri('');
+          setTipeTugas('');
+          setIsiTugas('');
+        }
+        // --- AKHIR BLOK BARU ---
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
@@ -118,24 +129,27 @@ const getToday = () => new Date().toISOString().split('T')[0];
 
   // simpan bulk
   const handleSave = async () => {
-    if (!user) return;
-    if (!selectedJadwal) return;
+    if (!user || !selectedJadwal) return;
     setSaving(true);
     const today = getToday();
+    
+    // --- PAYLOAD DISESUAIKAN ---
     const payload: AbsensiSiswaInput[] = students.map(s => ({
       jadwal_id: String(selectedJadwal.id),
       siswa_id:  String(s.id),
       tanggal:   today,
       status:    (attendance[s.id]?.status as AbsensiStatus) || 'hadir',
       catatan:   attendance[s.id]?.catatan || '',
-      tutor_id:  String(user.id),
+      tutor_id:  String(user.id), // Sebaiknya gunakan ID dari profile tutor, bukan user.id
       kelas_id:  String(selectedJadwal.kelas_id),
-      sub_materi_id:       subMateri  || undefined,
+      sub_materi:          subMateri  || undefined, // DIUBAH dari sub_materi_id
       jenis_tugas:         (tipeTugas ? (tipeTugas as JenisTugas) : undefined),
       isi_tugas:           isiTugas   || undefined,
       tanggal_pengumpulan: undefined,
       ketercapaian:        undefined
     }));
+    // --- AKHIR PENYESUAIAN PAYLOAD ---
+
     try {
       await bulkUpsertAbsensiSiswa(payload);
       alert('Absensi berhasil disimpan');
@@ -186,23 +200,27 @@ const getToday = () => new Date().toISOString().split('T')[0];
         />
       </div>
 
-      {/* Pilih Materi, SubMateri, Tipe Tugas */}
-      <div className="mb-6 flex items-center space-x-4">
-        <span className="w-32 text-sm font-medium text-[#18355E]">Pilih :</span>
+      {/* --- BLOK JSX DIUBAH --- */}
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
         <MateriSelect
           value={materi}
           onChange={setMateri}
         />
-        <SubMateriSelect
+        {/* Mengganti SubMateriSelect dengan input teks biasa */}
+        <input
+          type="text"
+          placeholder="Sub Materi yang Diajarkan..."
           value={subMateri}
-          onChange={setSubMateri}
+          onChange={e => setSubMateri(e.target.value)}
+          className="w-full bg-white border border-gray-200 rounded-xl p-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#18355E]/50 text-[#18355E]"
         />
         <TipeTugasSelect
           value={tipeTugas}
           onChange={setTipeTugas}
         />
       </div>
-
+      {/* --- AKHIR BLOK JSX --- */}
+      
       {/* Isi Tugas */}
       <div className="mb-8">
         <textarea

@@ -142,3 +142,19 @@ export async function deleteUser(userId: string): Promise<{ message: string }> {
   });
   return handleApiResponse<{ message: string }>(res);
 }
+
+export async function updateMyProfile(
+  userData: {
+    username?: string;
+    email?: string;
+    password?: string;
+  }
+): Promise<{ user: UserWithRoles }> {
+  const res = await fetch(`${API_BASE_URL}/auth/me`, { // Panggil endpoint baru
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(userData),
+  });
+  return handleApiResponse<{ user: UserWithRoles }>(res);
+}

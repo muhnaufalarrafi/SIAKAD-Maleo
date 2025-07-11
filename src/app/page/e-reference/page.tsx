@@ -25,6 +25,9 @@ export default function EReferencePage() {
   const [isModalOpen, setModalOpen] = useState(false);
   const [selectedRef, setSelectedRef] = useState<EReference | null>(null);
 
+  // BARU: State untuk menyimpan query pencarian
+  const [searchQuery, setSearchQuery] = useState('');
+
   const loadRefs = async () => {
     setLoading(true);
     try {
@@ -41,6 +44,14 @@ export default function EReferencePage() {
   useEffect(() => {
     if (user) loadRefs();
   }, [user]);
+
+  // BARU: Logika untuk memfilter referensi berdasarkan searchQuery
+  const filteredRefs = refs.filter(ref =>
+    ref.judul.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (ref.deskripsi && ref.deskripsi.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (ref.program_nama && ref.program_nama.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (ref.mapel_nama && ref.mapel_nama.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   const isRole = (roleName: string): boolean =>
     user?.roles?.some((r) => r.name.toLowerCase() === roleName.toLowerCase()) ?? false;
@@ -95,13 +106,13 @@ export default function EReferencePage() {
       }
       setModalOpen(false);
       await loadRefs();
-    } catch (err: unknown) { // Ganti 'any' dengan 'unknown'
-      const msg =
-        err instanceof Error && err.message // Lakukan type narrowing
-          ? err.message
-          : 'Gagal menyimpan reference';
-      alert(msg);
-    }
+    } catch (err: unknown) { // Ganti 'any' dengan 'unknown'
+      const msg =
+        err instanceof Error && err.message // Lakukan type narrowing
+          ? err.message
+          : 'Gagal menyimpan reference';
+      alert(msg);
+    }
   };
 
   if (loading) return <div className="text-center py-10">Loading...</div>;
@@ -110,12 +121,21 @@ export default function EReferencePage() {
   return (
     <div className="min-h-screen bg-[#F5F8FF] p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold text-[#18355E]">E-Reference</h1>
+        {/* DIUBAH: Input pencarian menggantikan judul statis */}
+        <div className="relative w-full max-w-sm">
+          <input
+            type="text"
+            placeholder="Cari judul, deskripsi, mapel..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-4 pr-4 py-2 border border-gray-200 rounded-full text-[#18355E] focus:outline-none focus:ring-2 focus:ring-[#18355E]/50"
+          />
+        </div>
         {(isAdmin || isTutor) && (
           <button
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#F6C443]
               hover:bg-[#E8B73B] text-[#18355E] font-semibold shadow transition
-              active:scale-95"
+              active:scale-95 whitespace-nowrap"
             onClick={handleAdd}
           >
             + Tambah
@@ -124,7 +144,8 @@ export default function EReferencePage() {
       </div>
 
       <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {refs.map((ref) => (
+        {/* DIUBAH: Gunakan 'filteredRefs' untuk menampilkan data */}
+        {filteredRefs.map((ref) => (
           <div key={ref.id} className="bg-white rounded-2xl shadow p-6 flex flex-col">
             <h3 className="text-lg font-semibold text-[#18355E]">{ref.judul}</h3>
             {ref.deskripsi && (
