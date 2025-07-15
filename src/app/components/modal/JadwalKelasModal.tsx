@@ -4,16 +4,19 @@
 import { FC, useState, useEffect } from 'react';
 import { Button } from '../button/Button';
 import type { JadwalKelas, JadwalKelasInput } from '@/app/lib/class/jadwalKelas';
-import { getAllMapel, Mapel } from '@/app/lib/curriculum/mataPelajaran';
-import { getAllKelas, Kelas } from '@/app/lib/class/kelas';
-import { getAllTutors, Tutor } from '@/app/lib/users/tutor';
+import type { Mapel } from '@/app/lib/curriculum/mataPelajaran';
+import type { Kelas } from '@/app/lib/class/kelas';
+import type { Tutor } from '@/app/lib/users/tutor';
 
-
+// --- PERUBAHAN 1: Update interface untuk menerima data dari parent ---
 interface JadwalKelasModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialData?: JadwalKelas;
   onSubmit: (data: JadwalKelasInput, id?: string) => Promise<void>;
+  mapels: Mapel[];
+  tutors: Tutor[];
+  kelasList: Kelas[];
 }
 
 export const JadwalKelasModal: FC<JadwalKelasModalProps> = ({
@@ -21,10 +24,15 @@ export const JadwalKelasModal: FC<JadwalKelasModalProps> = ({
   onClose,
   initialData,
   onSubmit,
+  mapels,       // Gunakan prop dari parent
+  tutors,       // Gunakan prop dari parent
+  kelasList,    // Gunakan prop dari parent
 }) => {
-  const [mapelList, setMapelList] = useState<Mapel[]>([]);
-  const [kelasList, setKelasList] = useState<Kelas[]>([]);
-  const [tutorList, setTutorList] = useState<Tutor[]>([]);
+  // --- PERUBAHAN 2: Hapus state dan fetching data internal ---
+  // State ini tidak lagi diperlukan karena data diambil dari props
+  // const [mapelList, setMapelList] = useState<Mapel[]>([]);
+  // const [kelasList, setKelasList] = useState<Kelas[]>([]);
+  // const [tutorList, setTutorList] = useState<Tutor[]>([]);
 
   const [mataPelId, setMataPelId] = useState('');
   const [tutorId, setTutorId] = useState('');
@@ -34,27 +42,9 @@ export const JadwalKelasModal: FC<JadwalKelasModalProps> = ({
   const [tempat, setTempat] = useState('');
   const [keterangan, setKeterangan] = useState('');
   const [kelasId, setKelasId] = useState('');
-  
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-  const fetchData = async () => {
-    try {
-      const mapels = await getAllMapel();
-      const kelas = await getAllKelas();
-      const tutors = await getAllTutors(); // ambil semua tutor
-
-      setMapelList(mapels);
-      setKelasList(kelas);
-      setTutorList(tutors); // simpan ke state
-    } catch (err) {
-      console.error('Gagal memuat dropdown:', err);
-    }
-  };
-
-    fetchData();
-  }, [isOpen]);
+  // Hapus useEffect yang melakukan fetching data karena data sudah didapat dari props
+  // useEffect(() => { ... }, [isOpen]);
 
   useEffect(() => {
     if (initialData) {
@@ -67,6 +57,7 @@ export const JadwalKelasModal: FC<JadwalKelasModalProps> = ({
       setKeterangan(initialData.keterangan ?? '');
       setKelasId(initialData.kelas_id ?? '');
     } else {
+      // Reset form saat tidak ada initialData
       setMataPelId('');
       setTutorId('');
       setHari('');
@@ -80,25 +71,23 @@ export const JadwalKelasModal: FC<JadwalKelasModalProps> = ({
 
   if (!isOpen) return null;
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-
-  await onSubmit(
-    {
-      mata_pelajaran_id: String(mataPelId ?? '').trim(),
-      tutor_id: String(tutorId ?? '').trim(),
-      hari: String(hari ?? '').trim(),
-      jam_mulai: jamMulai,
-      jam_selesai: jamSelesai,
-      tempat: String(tempat ?? '').trim() || undefined,
-      keterangan: String(keterangan ?? '').trim() || undefined,
-      kelas_id: String(kelasId ?? '').trim() || undefined,
-    },
-    initialData?.id
-  );
-
-  onClose();
-};
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await onSubmit(
+      {
+        mata_pelajaran_id: mataPelId,
+        tutor_id: tutorId,
+        hari: hari,
+        jam_mulai: jamMulai,
+        jam_selesai: jamSelesai,
+        tempat: tempat || undefined,
+        keterangan: keterangan || undefined,
+        kelas_id: kelasId || undefined,
+      },
+      initialData?.id
+    );
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -106,7 +95,6 @@ const handleSubmit = async (e: React.FormEvent) => {
         <h2 className="text-xl font-semibold mb-4 text-[#18355E]">
           {initialData ? 'Edit Jadwal Kelas' : 'Tambah Jadwal Kelas'}
         </h2>
-
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Mata Pelajaran Dropdown */}
           <div>
@@ -118,15 +106,14 @@ const handleSubmit = async (e: React.FormEvent) => {
               className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-[#18355E]"
             >
               <option value="">-- Pilih Mata Pelajaran --</option>
-              {mapelList.map((m) => (
+              {mapels.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.nama}
                 </option>
               ))}
             </select>
           </div>
-
-          {/* Tutor ID */}
+          {/* Tutor Dropdown */}
           <div>
             <label className="block mb-1 font-medium">Tutor</label>
             <select
@@ -136,14 +123,13 @@ const handleSubmit = async (e: React.FormEvent) => {
               className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-[#18355E]"
             >
               <option value="">-- Pilih Tutor --</option>
-              {tutorList.map((t) => (
+              {tutors.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.nama_lengkap} ({t.jenis_tutor})
                 </option>
               ))}
             </select>
           </div>
-
           {/* Hari */}
           <div>
             <label className="block mb-1 font-medium">Hari</label>
@@ -156,7 +142,6 @@ const handleSubmit = async (e: React.FormEvent) => {
               className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-[#18355E]"
             />
           </div>
-
           {/* Jam Mulai dan Selesai */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -180,7 +165,6 @@ const handleSubmit = async (e: React.FormEvent) => {
               />
             </div>
           </div>
-
           {/* Tempat */}
           <div>
             <label className="block mb-1 font-medium">Tempat (opsional)</label>
@@ -191,7 +175,6 @@ const handleSubmit = async (e: React.FormEvent) => {
               className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-[#18355E]"
             />
           </div>
-
           {/* Keterangan */}
           <div>
             <label className="block mb-1 font-medium">Keterangan (opsional)</label>
@@ -202,7 +185,6 @@ const handleSubmit = async (e: React.FormEvent) => {
               className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-[#18355E]"
             />
           </div>
-
           {/* Kelas Dropdown */}
           <div>
             <label className="block mb-1 font-medium">Kelas (opsional)</label>
@@ -219,7 +201,6 @@ const handleSubmit = async (e: React.FormEvent) => {
               ))}
             </select>
           </div>
-
           {/* Buttons */}
           <div className="flex justify-end gap-2 pt-2">
             <Button

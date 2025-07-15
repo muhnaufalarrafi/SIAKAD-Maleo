@@ -1,4 +1,3 @@
-// src\app\page\tutor-schedule\page.tsx
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -20,42 +19,64 @@ export default function TutorSchedulePage() {
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState<string|null>(null);
 
-useEffect(() => {
-  if (!user) return;
-  setLoading(true);
-  getJadwalByTutorId(user.id)
-    .then(grouped => {
-      const flatJadwal = Object.values(grouped).flat();
-      console.log("DATA JADWAL MENTAH:", flatJadwal); // <-- TAMBAHKAN INI
-      setJadwal(flatJadwal);
-    })
-    .catch(err => setError(err.message || 'Gagal memuat jadwal'))
-    .finally(() => setLoading(false));
-}, [user]);
+  useEffect(() => {
+    if (!user) return;
+    setLoading(true);
+    getJadwalByTutorId(user.id)
+      .then(grouped => {
+        const flatJadwal = Object.values(grouped).flat();
+        setJadwal(flatJadwal);
+      })
+      .catch(err => setError(err.message || 'Gagal memuat jadwal'))
+      .finally(() => setLoading(false));
+  }, [user]);
 
-  // Bangun timeSlots dari jadwal ("07:00–08:00" → "07:00")
+  // --- PERUBAHAN DI SINI ---
+  // Memproses data 'jadwal' untuk memisahkan mata pelajaran dan kelas.
   const timeSlots: TimeSlot[] = useMemo(() => {
-    const times = Array.from(
+    // 1. Dapatkan semua rentang waktu unik dan urutkan.
+    const uniqueTimeRanges = Array.from(
       new Set(jadwal.map(j => `${j.jam_mulai}–${j.jam_selesai}`))
     ).sort();
-    return times.map(str => {
-      const [jam_mulai] = str.split('–');
+
+    // 2. Untuk setiap rentang waktu, buat satu baris untuk tabel jadwal.
+    return uniqueTimeRanges.map(timeRange => {
+      const [jam_mulai] = timeRange.split('–');
+
+      // 3. Untuk setiap hari, cari entri jadwal yang cocok.
       const schedule = DAYS.reduce<
         Record<string, { subject: string; room: string } | null>
       >((acc, day) => {
         const entry = jadwal.find(
           j =>
             j.hari === day.key &&
-            `${j.jam_mulai}–${j.jam_selesai}` === str
+            `${j.jam_mulai}–${j.jam_selesai}` === timeRange
         );
-        acc[day.key] = entry
-          ? {
-              subject: entry.nama_mapel || '–',
-              room: entry.tempat || '–'
-            }
-          : null;
+
+        // 4. Jika entri jadwal ditemukan, format ulang teksnya.
+        if (entry) {
+          // Baris pertama hanya untuk nama mata pelajaran.
+          const subjectText = entry.nama_mapel || 'N/A';
+          
+          // Baris kedua untuk kelas dan tempat, tanpa keterangan.
+          const classText = entry.nama_kelas ? `Kelas ${entry.nama_kelas}` : '';
+          const placeText = entry.tempat || '';
+          
+          // Gabungkan kelas dan tempat dengan pemisah jika keduanya ada.
+          const roomText = [classText, placeText].filter(Boolean).join(' - ');
+
+          acc[day.key] = {
+            subject: subjectText,
+            // Tampilkan hasil gabungan, atau strip jika kosong.
+            room: roomText || '–',
+          };
+        } else {
+          // Jika tidak ada jadwal, biarkan kosong.
+          acc[day.key] = null;
+        }
         return acc;
       }, {});
+
       return { time: jam_mulai, schedule };
     });
   }, [jadwal]);

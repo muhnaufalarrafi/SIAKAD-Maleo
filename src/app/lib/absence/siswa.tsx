@@ -42,10 +42,13 @@ export interface AbsensiSiswaInput {
 // --- INTERFACE BARU ---
 export interface TeachingHistory {
   mata_pelajaran: string;
-  sub_materi: string;
-  tanggal: string; // YYYY-MM-DD
+  sub_materi?: string; // Dibuat opsional karena bisa jadi null
+  tanggal: string;
+  jam_mulai?: string;
+  jam_selesai?: string;
+  jenis_tugas?: JenisTugas; // Dibuat opsional karena bisa jadi null
+  total_hadir: string; // COUNT di SQL sering dikembalikan sebagai string
 }
-// --------------------
 
 // Tambahkan interface untuk respons error API jika server Anda mengirimkannya
 interface ApiErrorResponse {

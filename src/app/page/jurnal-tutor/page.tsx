@@ -1,30 +1,23 @@
-// src/app/page/jurnal-tutor/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/app/context/AuthContext'; // BARU: Impor useAuth
+import { useAuth } from '@/app/context/AuthContext';
 import { getTeachingHistoryByTutor, TeachingHistory } from '@/app/lib/absence/siswa';
-import { getTutorByUserId } from '@/app/lib/users/tutor'; // BARU: Fungsi untuk mendapat profil tutor
+import { getTutorByUserId } from '@/app/lib/users/tutor';
 
-// Tipe data untuk riwayat yang sudah dikelompokkan
+// Tipe data untuk riwayat yang sudah dikelompokkan berdasarkan mata pelajaran
 type GroupedHistory = {
+  // Kunci adalah nama mata pelajaran, nilainya adalah array sesi mengajar
   [mataPelajaran: string]: Omit<TeachingHistory, 'mata_pelajaran'>[];
 };
 
 export default function JurnalTutorPage() {
-  // BARU: Gunakan hook useAuth untuk mendapatkan data user
   const { user } = useAuth();
-
-  // DIUBAH: State tidak lagi memerlukan daftar tutor atau ID yang dipilih
   const [history, setHistory] = useState<GroupedHistory>({});
-  
-  // State untuk UI
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // DIUBAH: useEffect sekarang bergantung pada 'user' dari AuthContext
   useEffect(() => {
-    // Jangan lakukan apa-apa jika data user belum ada
     if (!user) {
       setLoading(false);
       return;
@@ -33,17 +26,16 @@ export default function JurnalTutorPage() {
     setLoading(true);
     setError(null);
 
-    // Langkah 1: Dapatkan ID profil tutor dari ID user yang login
     getTutorByUserId(user.id)
       .then(tutorProfile => {
         if (!tutorProfile) {
           throw new Error("Profil tutor tidak ditemukan untuk pengguna ini.");
         }
-        // Langkah 2: Gunakan ID profil tutor untuk mengambil riwayat mengajar
+        // Mengambil data riwayat yang sudah diagregasi dari backend
         return getTeachingHistoryByTutor(tutorProfile.id);
       })
       .then(data => {
-        // Kelompokkan hasil berdasarkan mata pelajaran
+        // Kelompokkan hasil berdasarkan mata pelajaran di sisi klien
         const grouped: GroupedHistory = data.reduce((acc, item) => {
           const { mata_pelajaran, ...rest } = item;
           if (!acc[mata_pelajaran]) {
@@ -61,7 +53,7 @@ export default function JurnalTutorPage() {
       .finally(() => {
         setLoading(false);
       });
-  }, [user]); // Efek ini berjalan setiap kali 'user' berubah
+  }, [user]);
 
   // Fungsi untuk format tanggal
   const formatDate = (dateString: string) => {
@@ -98,26 +90,25 @@ export default function JurnalTutorPage() {
                   {mapel}
                 </h2>
                 <div className="overflow-x-auto">
-                  <table className="min-w-full text-[#18355E]">
+                  {/* --- PERUBAHAN TABEL DI SINI --- */}
+                  <table className="min-w-full text-sm text-[#18355E]">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Tanggal
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Sub Materi yang Diajarkan
-                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jam</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sub Materi</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis Tugas</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kehadiran</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {records.map((rec, index) => (
                         <tr key={index}>
-                          <td className="px-6 py-4 whitespace-nowrap w-1/4">
-                            {formatDate(rec.tanggal)}
-                          </td>
-                          <td className="px-6 py-4">
-                            {rec.sub_materi}
-                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">{formatDate(rec.tanggal)}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{rec.jam_mulai && rec.jam_selesai ? `${rec.jam_mulai} - ${rec.jam_selesai}` : 'N/A'}</td>
+                          <td className="px-6 py-4">{rec.sub_materi || '-'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{rec.jenis_tugas || '-'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{`${rec.total_hadir} siswa`}</td>
                         </tr>
                       ))}
                     </tbody>

@@ -24,6 +24,8 @@ const DAYS = [
   { key: 'Rabu',   label: 'Rabu'   },
   { key: 'Kamis',  label: 'Kamis'  },
   { key: 'Jumat',  label: 'Jumat'  },
+  { key: 'Sabtu',  label: 'Sabtu'  },
+  { key: 'Minggu', label: 'Minggu' },
 ];
 
 export default function JadwalKelasPage() {

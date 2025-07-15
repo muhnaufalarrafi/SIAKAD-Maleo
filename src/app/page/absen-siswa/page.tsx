@@ -167,7 +167,7 @@ export default function AbsenSiswaPage() {
   return (
     <div className="p-8 bg-[#F5F8FF] min-h-screen">
       <h1 className="text-2xl font-semibold text-[#18355E] mb-6">
-        Absen Siswa Hari Ini
+        Jurnal Mengajar Tutor
       </h1>
 
       {/* Pilih Jadwal */}
@@ -182,7 +182,7 @@ export default function AbsenSiswaPage() {
           placeholder="-- Pilih Jadwal --"
           options={jadwalList.map(j => ({
             value: String(j.id),
-            label: `${j.kelas_id} || ${j.nama_mapel} || ${j.hari} || ${j.jam_mulai}-${j.jam_selesai}`
+            label: `${j.nama_mapel} || ${j.hari} || ${j.jam_mulai}-${j.jam_selesai}`
           }))}
         />
       </div>
@@ -232,21 +232,33 @@ export default function AbsenSiswaPage() {
         />
       </div>
 
-      {/* Checkbox “Tandai semua Hadir” */}
-      <div className="mb-4 flex items-center">
-        <input
-          id="selectAll"
-          type="checkbox"
-          className="h-4 w-4 text-[#18355E] border-gray-300 rounded"
-          onChange={e => handleSelectAll(e.target.checked)}
-        />
-        <label
-          htmlFor="selectAll"
-          className="ml-2 text-[#18355E] font-medium"
-        >
-          Tandai semua Hadir
-        </label>
+      {/* --- PERUBAHAN DI SINI --- */}
+      {/* Checkbox “Tandai semua Hadir” & Nama Kelas */}
+      <div className="mb-4 flex items-center justify-between">
+        {/* Bagian Kiri: Checkbox */}
+        <div className="flex items-center">
+          <input
+            id="selectAll"
+            type="checkbox"
+            className="h-4 w-4 text-[#18355E] border-gray-300 rounded focus:ring-[#18355E]"
+            onChange={e => handleSelectAll(e.target.checked)}
+          />
+          <label
+            htmlFor="selectAll"
+            className="ml-2 text-[#18355E] font-medium"
+          >
+            Tandai semua Hadir
+          </label>
+        </div>
+
+        {/* Bagian Kanan: Nama Kelas */}
+        {selectedJadwal && selectedJadwal.nama_kelas && (
+          <span className="text-sm font-semibold text-gray-700 bg-gray-200 px-3 py-1 rounded-full">
+            Kelas: {selectedJadwal.nama_kelas}
+          </span>
+        )}
       </div>
+      {/* --- AKHIR PERUBAHAN --- */}
 
       {/* Tabel Absen */}
       <div className="bg-white rounded-3xl shadow-lg ring-1 ring-[#18355E]/20 overflow-x-auto">
