@@ -102,8 +102,8 @@ const RekapAbsenTutorPage = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-bold text-gray-800">Rekapitulasi Absensi Tutor</h1>
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen text-[#18355E]">
+      <h1 className="text-3xl font-bold">Rekapitulasi Absensi Tutor</h1>
       
       <TutorFilterPanel
         startDate={startDate}
