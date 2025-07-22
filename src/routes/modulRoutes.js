@@ -7,13 +7,16 @@ import {
   updateModul,
   deleteModul
 } from '../controllers/modulController.js';
+import { authenticate } from '../middleware/authMiddleware.js';
+import { authorize } from '../middleware/authorize.js';
 
 const router = express.Router();
+router.use(authenticate);
 
 router.get('/', getAllModul);
 router.get('/:id', getModulById);
-router.post('/', createModul);
-router.put('/:id', updateModul);
-router.delete('/:id', deleteModul);
+router.post('/', authorize('modul.create'), createModul);
+router.put('/:id', authorize('modul.update'), updateModul);
+router.delete('/:id', authorize('modul.delete'), deleteModul);
 
 export default router;

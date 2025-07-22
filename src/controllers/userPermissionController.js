@@ -1,3 +1,4 @@
+// src\controllers\userPermissionController.js
 import { UserPermissionModel } from '../models/userPermissionModel.js';
 
 export const getAllUserPermissions = async (req, res) => {

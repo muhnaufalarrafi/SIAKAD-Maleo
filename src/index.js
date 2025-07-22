@@ -1,9 +1,7 @@
   // src\index.js
   import express from 'express';
-  import http from 'http';
-  import { Server } from 'socket.io';
   import cors from 'cors';
-  import socketHandlers from './events/socketHandlers.js';
+  import cookieParser from 'cookie-parser';
 
   import userRoutes from './routes/userRoutes.js';
   import roleRoutes from './routes/roleRoutes.js';
@@ -18,30 +16,45 @@
   import mapelRoutes from './routes/mapelRoutes.js';
   import modulRoutes from './routes/modulRoutes.js';
   import jadwalRoutes from './routes/jadwalRoutes.js';
+  import kelasRoutes from './routes/kelasRoutes.js';
   import kelasSiswaRoutes from './routes/kelasSiswaRoutes.js';
   import absensiGuruRoutes from './routes/absensiGuruRoutes.js';
   import absensiSiswaRoutes from './routes/absensiSiswaRoutes.js';
   import eReferenceRoutes from './routes/eReferenceRoutes.js';
   import materiRoutes from './routes/materiRoutes.js';
   import subMateriRoutes from './routes/subMateriRoutes.js';
+  import JadwalKelasRoutes from './routes/jadwalKelasRoutes.js'
 
   const app = express();
-  const server = http.createServer(app);
-  const io = new Server(server, {
-    cors: {
-    origin: ['http://localhost:3000', 'http://localhost:3001'], // lebih aman bisa spesifik origin frontend
+
+  // --- Peningkatan 1: Konfigurasi CORS Dinamis ---
+const allowedOrigins = [
+    'http://localhost:3000', 
+    'http://localhost:3001', 
+    process.env.FRONTEND_URL // URL frontend production Anda, diatur via Environment Variable
+];
+
+const corsOptions = {
+    origin: (origin, callback) => {
+        // Izinkan request tanpa 'origin' (seperti dari Postman atau mobile apps) atau jika origin ada di daftar
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    }
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
+};
+  app.use(cors(corsOptions)); // DIPERBAIKI: Baris ini ditambahkan
+  app.use(cookieParser());
+
+    // --- Peningkatan 2: Health Check Endpoint ---
+  app.get('/healthz', (req, res) => {
+      // Endpoint sederhana untuk memberi tahu Cloud Run bahwa aplikasi sehat
+      res.status(200).send('OK');
   });
-
-  // sebelum route API
-  app.use(cors({
-  // origin: '*', // untuk development, boleh pakai '*'
-    origin: ['http://localhost:3000', 'http://localhost:3001'], // lebih aman bisa spesifik origin frontend
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'], // tambahkan header yang dipakai di request
-  }));
-
 
   // Middleware
   app.use(express.json());
@@ -58,22 +71,30 @@
   app.use('/api/mapel', mapelRoutes);
   app.use('/api/modul', modulRoutes);
   app.use('/api/jadwal', jadwalRoutes);
+  app.use('/api/kelas', kelasRoutes);
   app.use('/api/kelas-siswa', kelasSiswaRoutes);
   app.use('/api/absensi-guru', absensiGuruRoutes);
   app.use('/api/absensi-siswa', absensiSiswaRoutes);
   app.use('/api/e-reference', eReferenceRoutes);
   app.use('/api/materi', materiRoutes);
   app.use('/api/sub-materi', subMateriRoutes);
+  app.use('/api/jadwal-kelas' , JadwalKelasRoutes)
 
 
-  // Socket.io event handlers
-  io.on('connection', (socket) => { 
-    console.log('Client connected:', socket.id);
-    socketHandlers(socket, io);
-  });
+      // --- Peningkatan 3: Error Handling Terpusat ---
+    // Middleware ini HARUS diletakkan setelah semua rute API Anda
+    app.use((err, req, res, next) => {
+        console.error(err.stack); // Log error ke konsol (untuk debugging)
+        res.status(500).json({ 
+            success: false,
+            message: 'Terjadi kesalahan pada server.' 
+        });
+    });
 
-  // Start server
-  const PORT = process.env.PORT || 3000;
-  server.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+const PORT = process.env.PORT || 3000//8080; 
+
+// DIUBAH: Gunakan app.listen() langsung, bukan server.listen()
+app.listen(PORT, () => {
+  // Peningkatan kecil: Gunakan variabel PORT agar log akurat saat di-deploy
+  console.log(`Server running on port ${PORT}`);
+});

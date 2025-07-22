@@ -7,13 +7,16 @@ import {
   updateSubMateri,
   deleteSubMateri
 } from '../controllers/subMateriController.js';
+import { authenticate } from '../middleware/authMiddleware.js';
+import { authorize } from '../middleware/authorize.js';
 
 const router = express.Router();
+router.use(authenticate);
 
 router.get('/', getAllSubMateri);
 router.get('/:id', getSubMateriById);
-router.post('/', createSubMateri);
-router.put('/:id', updateSubMateri);
-router.delete('/:id', deleteSubMateri);
+router.post('/', authorize('sub-materi.create'), createSubMateri);
+router.put('/:id', authorize('sub-materi.update'), updateSubMateri);
+router.delete('/:id', authorize('sub-materi.delete'), deleteSubMateri);
 
 export default router;

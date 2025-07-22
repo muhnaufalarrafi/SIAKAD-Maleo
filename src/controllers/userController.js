@@ -47,13 +47,20 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
+// SEBELUM
 export const getUserById = async (req, res) => {
   try {
     const result = await UserModel.getById(req.params.id);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-    res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to retrieve user' });
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User tidak ditemukan' });
+    }
+    
+    // INI BAGIAN YANG PALING PENTING
+    // Pastikan Anda membungkus hasilnya di dalam objek { user: ... }
+    res.json({ user: result.rows[0] }); 
+
+  } catch (err) { 
+    res.status(500).json({ error: 'Gagal mengambil data user' });
   }
 };
 
@@ -71,28 +78,36 @@ export const createUser = async (req, res) => {
       status_aktif
     });
 
-    res.status(201).json(result.rows[0]);
+    const newUser = result.rows[0];
+
+    res.status(201).json({ user: newUser }); // ✅ FIXED: wrap in `{ user: ... }`
   } catch (err) {
+    console.error('CREATE USER ERROR:', err); // helpful log
     res.status(500).json({ error: 'Failed to create user' });
   }
 };
 
 export const updateUser = async (req, res) => {
   try {
-    const { username, email, status_aktif, password } = req.body;
-    let updatedData = { username, email, status_aktif };
+    const { id } = req.params;
+    const updates = req.body;
 
-    // jika password dikirim, hash dan tambahkan
-    if (password) {
-      const hashed = await hashPassword(password);
-      updatedData.password = hashed;
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'Tidak ada data untuk diperbarui.' });
     }
 
-    const result = await UserModel.update(req.params.id, updatedData);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-    res.json(result.rows[0]);
+    if (updates.password) {
+      updates.password = await hashPassword(updates.password);
+    }
+
+    const result = await UserModel.update(id, updates);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'User tidak ditemukan' });
+    
+    // Kirim kembali dengan format yang benar
+    res.json({ user: result.rows[0] });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to update user' });
+    console.error('Update user error:', err);
+    res.status(500).json({ error: 'Gagal memperbarui user' });
   }
 };
 

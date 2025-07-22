@@ -1,33 +1,78 @@
-// src\controllers\kelasSiswaController.js
+// src/controllers/kelasSiswaController.js
 import { KelasSiswaModel } from '../models/kelasSiswaModel.js';
 
-export const getSiswaByJadwal = async (req, res) => {
+export const getAllKelasSiswa = async (req, res) => {
   try {
-    const result = await KelasSiswaModel.getByJadwal(req.params.jadwalId);
+    const result = await KelasSiswaModel.getAll();
     res.json(result.rows);
-  } catch {
-    res.status(500).json({ error: 'Failed to fetch siswa for this jadwal' });
+  } catch (err) {
+    console.error('Error fetching kelas_siswa:', err);
+    res.status(500).json({ error: 'Failed to fetch kelas_siswa' });
   }
 };
 
-export const assignSiswaToJadwal = async (req, res) => {
+export const getKelasSiswaById = async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return res.status(400).json({ error: 'Invalid ID' });
+
   try {
-    const result = await KelasSiswaModel.assign(req.body);
+    const result = await KelasSiswaModel.getById(id);
+    if (result.rows.length === 0)
+      return res.status(404).json({ error: 'Assignment not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(`Error fetching assignment ${id}:`, err);
+    res.status(500).json({ error: 'Failed to fetch assignment' });
+  }
+};
+
+// rename create -> assign
+export const assignSiswaToKelas = async (req, res) => {
+  const { kelas_id, siswa_id } = req.body;
+  if (!kelas_id || !siswa_id) {
+    return res.status(400).json({ error: 'kelas_id and siswa_id are required' });
+  }
+
+  try {
+    const result = await KelasSiswaModel.assign({ kelas_id, siswa_id });
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    if (err.code === '23505') { // UNIQUE violation
-      return res.status(409).json({ error: 'Siswa sudah tergabung dalam jadwal ini' });
-    }
-    res.status(500).json({ error: 'Failed to assign siswa to jadwal' });
+    console.error('Error assigning siswa to kelas:', err);
+    res.status(500).json({ error: 'Failed to assign siswa to kelas' });
   }
 };
 
-export const removeSiswaFromJadwal = async (req, res) => {
+export const updateKelasSiswa = async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return res.status(400).json({ error: 'Invalid ID' });
+
+  const { kelas_id, siswa_id } = req.body;
+  if (!kelas_id || !siswa_id) {
+    return res.status(400).json({ error: 'kelas_id and siswa_id are required' });
+  }
+
   try {
-    const result = await KelasSiswaModel.remove(req.body);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Data tidak ditemukan' });
-    res.json({ message: 'Siswa removed from jadwal successfully' });
-  } catch {
-    res.status(500).json({ error: 'Failed to remove siswa from jadwal' });
+    const result = await KelasSiswaModel.update(id, { kelas_id, siswa_id });
+    if (result.rows.length === 0)
+      return res.status(404).json({ error: 'Assignment not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(`Error updating assignment ${id}:`, err);
+    res.status(500).json({ error: 'Failed to update assignment' });
+  }
+};
+
+export const deleteKelasSiswa = async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return res.status(400).json({ error: 'Invalid ID' });
+
+  try {
+    const result = await KelasSiswaModel.delete(id);
+    if (result.rows.length === 0)
+      return res.status(404).json({ error: 'Assignment not found' });
+    res.json({ message: 'Assignment deleted successfully' });
+  } catch (err) {
+    console.error(`Error deleting assignment ${id}:`, err);
+    res.status(500).json({ error: 'Failed to delete assignment' });
   }
 };

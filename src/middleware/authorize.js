@@ -1,3 +1,4 @@
+// src\middleware\authorize.js
 import { UserRoleModel } from '../models/userRoleModel.js';
 import { RolePermissionModel } from '../models/rolePermissionModel.js';
 import { UserPermissionModel } from '../models/userPermissionModel.js';

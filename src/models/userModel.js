@@ -1,4 +1,4 @@
-// src\models\userModel.js
+// src/models/userModel.js
 import { query } from '../config/db.js';
 
 export const UserModel = {
@@ -7,10 +7,10 @@ export const UserModel = {
   getByEmail: (email) => query('SELECT * FROM users WHERE email = $1', [email]),
 
   getByIdentifier: (identifier) => query(`
-  SELECT * FROM users
-  WHERE email = $1 OR username = $1 OR id = $1
-  LIMIT 1
-`, [identifier]),
+    SELECT * FROM users
+    WHERE email = $1 OR username = $1 OR id = $1
+    LIMIT 1
+  `, [identifier]),
 
   create: ({ id, username, email, password, status_aktif }) =>
     query(
@@ -19,22 +19,37 @@ export const UserModel = {
       [id, username, email, password, status_aktif]
     ),
 
-  update: (id, data) => {
-    const fields = ['username', 'email', 'status_aktif'];
-    const values = [data.username, data.email, data.status_aktif];
-    let setClause = `username = $1, email = $2, status_aktif = $3`;
+  // --- FUNGSI UPDATE YANG SEPENUHNYA DINAMIS ---
+  update: (id, dataToUpdate) => {
+    const fields = Object.keys(dataToUpdate);
+    const values = Object.values(dataToUpdate);
 
-    if (data.password) {
-      fields.push('password');
-      values.push(data.password);
-      setClause += `, password = $4`;
-    }
+    // Membuat bagian "SET" dari query secara dinamis
+    // Hasilnya akan seperti: "email" = $1, "password" = $2
+    const setClause = fields
+      .map((field, index) => `"${field}" = $${index + 1}`)
+      .join(', ');
 
-    const queryText = `UPDATE users SET ${setClause} WHERE id = $${values.length + 1} RETURNING *`;
+    // Menambahkan 'id' untuk klausa WHERE di akhir array values
     values.push(id);
+    const whereClausePosition = values.length;
+
+    const queryText = `
+      UPDATE users 
+      SET ${setClause} 
+      WHERE id = $${whereClausePosition} 
+      RETURNING id, username, email, status_aktif
+    `;
 
     return query(queryText, values);
   },
 
-    delete: (id) => query('DELETE FROM users WHERE id = $1 RETURNING *', [id]),
+  delete: (id) => query('DELETE FROM users WHERE id = $1 RETURNING *', [id]),
+
+  updateTokenVersion: (userId, newVersion) => 
+    query(
+        'UPDATE users SET token_version = $1 WHERE id = $2 RETURNING *',
+        [newVersion, userId]
+    ),
+
 };

@@ -6,13 +6,16 @@ import {
   updatePermission,
   deletePermission,
 } from '../controllers/permissionController.js';
+import { authenticate } from '../middleware/authMiddleware.js';
+import { authorize } from '../middleware/authorize.js';
 
 const router = express.Router();
+router.use(authenticate);
 
-router.get('/', getAllPermissions);
+router.get('/', authorize('permissions.read'), getAllPermissions);
 router.get('/:id', getPermissionById);
-router.post('/', createPermission);
-router.put('/:id', updatePermission);
-router.delete('/:id', deletePermission);
+router.post('/', authorize('permissions.create'), createPermission);
+router.put('/:id', authorize('permissions.update'), updatePermission);
+router.delete('/:id', authorize('permissions.delete'), deletePermission);
 
 export default router;

@@ -7,13 +7,16 @@ import {
   updateMapel,
   deleteMapel
 } from '../controllers/mapelController.js';
+import { authenticate } from '../middleware/authMiddleware.js';
+import { authorize } from '../middleware/authorize.js';
 
 const router = express.Router();
+router.use(authenticate);
 
 router.get('/', getAllMapel);
 router.get('/:id', getMapelById);
-router.post('/', createMapel);
-router.put('/:id', updateMapel);
-router.delete('/:id', deleteMapel);
+router.post('/', authorize('mata_pelajaran.create'), createMapel);
+router.put('/:id', authorize('mata_pelajaran.update'), updateMapel);
+router.delete('/:id', authorize('mata_pelajaran.delete'), deleteMapel);
 
 export default router;

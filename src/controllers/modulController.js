@@ -22,11 +22,26 @@ export const getModulById = async (req, res) => {
 };
 
 export const createModul = async (req, res) => {
+  const { mata_pelajaran_id, nama, deskripsi, e_reference_id } = req.body;
+
+  // Validasi: mata_pelajaran_id dan nama wajib diisi
+  if (!mata_pelajaran_id || !nama) {
+    return res
+      .status(400)
+      .json({ error: 'Field "mata_pelajaran_id" dan "nama" wajib diisi' });
+  }
+
   try {
-    const result = await ModulModel.create(req.body);
+    const result = await ModulModel.create({
+      mata_pelajaran_id,
+      nama,
+      deskripsi: deskripsi || null,
+      e_reference_id: e_reference_id || null
+    });
     res.status(201).json(result.rows[0]);
-  } catch {
-    res.status(500).json({ error: 'Failed to create modul' });
+  } catch (err) {
+    console.error('Error creating modul:', err);
+    res.status(500).json({ error: 'Gagal membuat modul' });
   }
 };
 

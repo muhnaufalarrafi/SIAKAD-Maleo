@@ -47,5 +47,22 @@ export const AbsensiGuruModel = {
       WHERE id = $4
       RETURNING *`,
       [checkout_time, checkout_lat, checkout_lng, id]
-    )
+    ),
+    getByTutorAndToday: (tutor_id) =>
+    query(`
+      SELECT *
+      FROM absensi_guru
+      WHERE tutor_id = $1
+        AND tanggal::date = CURRENT_DATE
+    `, [tutor_id]),
+
+  // Atau: jika kamu mau pass tanggal secara dinamis:
+  getByTutorAndDate: (tutor_id, dateOnly) =>
+    query(`
+      SELECT *
+      FROM absensi_guru
+      WHERE tutor_id = $1
+        AND tanggal::date = $2::date
+    `, [tutor_id, dateOnly]),
+
 };

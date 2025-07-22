@@ -1,36 +1,98 @@
-// src\models\siswaModel.js
+// src/models/siswaModel.js
 import { query } from '../config/db.js';
 
 export const SiswaModel = {
-  getAll: () => query(`SELECT * FROM siswa_profiles`),
+  getAll: () =>
+    query(`
+      SELECT
+        id,
+        user_id,
+        nis,
+        nama_lengkap,
+        jenis_kelamin,
+        tanggal_lahir,
+        kelas,
+        status_aktif
+      FROM siswa_profiles
+      ORDER BY id
+    `),
 
-  getById: (id) => query(`SELECT * FROM siswa_profiles WHERE id = $1`, [id]),
+  getById: (id) =>
+    query(
+      `SELECT
+         id,
+         user_id,
+         nis,
+         nama_lengkap,
+         jenis_kelamin,
+         tanggal_lahir,
+         kelas,
+         status_aktif
+       FROM siswa_profiles
+       WHERE id = $1`,
+      [id]
+    ),
 
-  getByUserId: (user_id) => query(`SELECT * FROM siswa_profiles WHERE user_id = $1`, [user_id]),
+  getByUserId: (user_id) =>
+    query(
+      `SELECT
+         id,
+         user_id,
+         nis,
+         nama_lengkap,
+         jenis_kelamin,
+         tanggal_lahir,
+         kelas,
+         status_aktif
+       FROM siswa_profiles
+       WHERE user_id = $1`,
+      [user_id]
+    ),
 
   create: ({
-    user_id, nis, nama_lengkap, jenis_kelamin,
-    tanggal_lahir, kelas, status_aktif
+    user_id,
+    nis,
+    nama_lengkap,
+    jenis_kelamin,
+    tanggal_lahir,
+    kelas,
+    status_aktif
   }) =>
-    query(`
-      INSERT INTO siswa_profiles (
-        user_id, nis, nama_lengkap, jenis_kelamin,
-        tanggal_lahir, kelas, status_aktif
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+    query(
+      `INSERT INTO siswa_profiles (
+         user_id,
+         nis,
+         nama_lengkap,
+         jenis_kelamin,
+         tanggal_lahir,
+         kelas,
+         status_aktif
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING *`,
       [user_id, nis, nama_lengkap, jenis_kelamin, tanggal_lahir, kelas, status_aktif]
     ),
 
-  update: (id, data) =>
-    query(`
-      UPDATE siswa_profiles SET
-        nis = $1, nama_lengkap = $2, jenis_kelamin = $3,
-        tanggal_lahir = $4, kelas = $5, status_aktif = $6
-      WHERE id = $7 RETURNING *`,
-      [
-        data.nis, data.nama_lengkap, data.jenis_kelamin,
-        data.tanggal_lahir, data.kelas, data.status_aktif,
-        id
-      ]
+  update: (id, {
+    user_id,
+    nis,
+    nama_lengkap,
+    jenis_kelamin,
+    tanggal_lahir,
+    kelas,
+    status_aktif
+  }) =>
+    query(
+      `UPDATE siswa_profiles SET
+         user_id       = $1,
+         nis           = $2,
+         nama_lengkap  = $3,
+         jenis_kelamin = $4,
+         tanggal_lahir = $5,
+         kelas         = $6,
+         status_aktif  = $7
+       WHERE id = $8
+       RETURNING *`,
+      [user_id, nis, nama_lengkap, jenis_kelamin, tanggal_lahir, kelas, status_aktif, id]
     ),
 
   delete: (id) =>
